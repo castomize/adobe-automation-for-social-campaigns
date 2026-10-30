@@ -8,6 +8,14 @@ A local PHP app that turns a two-product brief into six campaign PNGs. Supply ph
 
 Requires PHP 8.2+ with cURL, fileinfo, GD, FreeType and ZIP. Use macOS, Linux or Windows with WSL. Fonts are bundled; there are no Composer or npm dependencies. Python 3 is needed only for tests.
 
+On a Mac without PHP, install it once using [Homebrew](https://brew.sh/):
+
+```sh
+brew install php
+```
+
+If `brew` is not found, install Homebrew from the official link above and complete the installer's **Next steps** to add it to your terminal PATH. Cloning this repository downloads the app; it does not install PHP.
+
 ```sh
 git clone https://github.com/castomize/adobe-automation-for-social-campaigns.git
 cd adobe-automation-for-social-campaigns
@@ -19,6 +27,8 @@ Alternatively, use **Code → Download ZIP**, extract it, and run `sh bin/start.
 Open [localhost:8787](http://127.0.0.1:8787/) and select **Load example**. This renders all six PNGs using the included photographs, without credentials or API calls. Stop the server with Ctrl+C. If the port is occupied, run `STUDIO_PORT=8788 sh bin/start.sh` and open port 8788 instead.
 
 The start script also finds PHP in the standard Homebrew locations if your terminal PATH does not include it. If startup reports a missing extension, install or enable it for the PHP CLI and rerun the start command. The local workflow has been verified on macOS; Linux and WSL have not been independently verified.
+
+Already cloned the repository? Run `git pull --ff-only` from its folder to get the latest startup fixes, then run `sh bin/start.sh` again.
 
 ## Reviewer walkthrough
 
