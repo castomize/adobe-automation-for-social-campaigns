@@ -18,7 +18,7 @@ Alternatively, use **Code → Download ZIP**, extract it, and run `sh bin/start.
 
 Open [localhost:8787](http://127.0.0.1:8787/) and select **Load example**. This renders all six PNGs using the included photographs, without credentials or API calls. Stop the server with Ctrl+C. If the port is occupied, run `STUDIO_PORT=8788 sh bin/start.sh` and open port 8788 instead.
 
-If startup reports a missing extension, install or enable it for the PHP CLI and rerun `php bin/studio.php check`. The local workflow has been verified on macOS; Linux and WSL have not been independently verified.
+The start script also finds PHP in the standard Homebrew locations if your terminal PATH does not include it. If startup reports a missing extension, install or enable it for the PHP CLI and rerun the start command. The local workflow has been verified on macOS; Linux and WSL have not been independently verified.
 
 ## Reviewer walkthrough
 
