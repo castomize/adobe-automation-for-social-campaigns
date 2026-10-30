@@ -2,6 +2,8 @@
 
 A local PHP app that turns a two-product brief into six campaign PNGs. Supply photographs or generate missing imagery with Cloudflare Workers AI. PHP handles the layout and lettering.
 
+[Download the 2:30 silent walkthrough](examples/walkthrough.mp4?raw=true). Captioned app captures cover local setup, the example, headline reuse, crop controls, exports and validation. This demonstration uses existing photographs; it does not show a new live AI request.
+
 ![Sea-salt dark chocolate campaign](examples/outputs/sea-salt-dark-bar/landscape.png)
 
 ## Quick start
