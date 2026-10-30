@@ -1,0 +1,65 @@
+{
+  "campaign_message": "Unwrap a better afternoon.",
+  "audience": "Working adults seeking an afternoon treat.",
+  "market": "United States",
+  "language": "English",
+  "visual_direction": "Luxury chocolatier editorial photography, close three-quarter view. Sculptural chocolate composition on pale limestone with muted blush silk behind it. Warm cream, deep cocoa, soft afternoon window light and restrained satin highlights. The product is prominent immediately below the copy area. Follow the product description precisely; no plants or distant still life.",
+  "products": [
+    {
+      "id": "sea-salt-dark-bar",
+      "name": "Sea-salt dark chocolate bar",
+      "description": "A thin dark chocolate bar tilted diagonally above pale stone, with the approved recessed letter marks, satin finish and supporting pieces. Preserve the approved composition and peach-blush fabric. A light scattering of fine, tiny sea-salt crystals rests on the chocolate surfaces.",
+      "asset": {
+        "origin": "example",
+        "path": "sources/sea-salt-dark-bar.jpg",
+        "mime": "image/jpeg",
+        "extension": "jpg",
+        "width": 1024,
+        "height": 1024,
+        "bytes": 425204,
+        "sha256": "7353868e348db0d42895c3890018c6cbc7a8d0fdbfd9d0043238ab2d9aa3459a",
+        "source_provenance": {
+          "origin": "cloudflare_workers_ai",
+          "kind": "image_edit",
+          "model": "@cf/black-forest-labs/flux-2-klein-9b",
+          "created_at": "2026-10-30T19:46:48+00:00",
+          "request_settings": {
+            "prompt": "Make one minimal edit to image 0: add just eight to ten tiny pinpoints of finely ground kitchen sea salt on the main chocolate bar, plus two or three on the small foreground chocolate pieces. Each white grain is only 1 to 2 pixels wide in the final 1024-pixel image, barely visible and much smaller than any letter engraving. A very sparse delicate dusting, not coarse flakes. Keep the cream stone and satin fabric completely untouched with no additional salt there. Preserve the exact composition, framing, bar angle, all existing engraved letter marks, chocolate shapes, surface texture, satin highlights, background, warm lighting, shadows, colors and positions of every object. Do not add anything else. The result should look identical to image 0 except for these few almost microscopic white salt grains resting on the chocolate.",
+            "width": 1024,
+            "height": 1024,
+            "input_image_0_sha256": "a8ab85159dc7b346cd06fcd022649bc3bbbc0cfaadb409d6d917c810970f885b",
+            "input_image_0_size": [
+              480,
+              480
+            ]
+          },
+          "parent_source_sha256": "2884fa4389e8d07c3d862ae7bc3bf7beda9b3d294ab34ae01435fd02aac97b28"
+        }
+      }
+    },
+    {
+      "id": "hazelnut-truffles",
+      "name": "Hazelnut truffles",
+      "description": "Glossy domed chocolate truffles with fine piped chocolate ribbons, a creamy hazelnut ganache center and chopped roasted hazelnuts. One cut truffle faces the camera; a few whole domed truffles surround it.",
+      "asset": {
+        "origin": "example",
+        "path": "sources/hazelnut-truffles.jpg",
+        "mime": "image/jpeg",
+        "extension": "jpg",
+        "width": 1024,
+        "height": 1024,
+        "bytes": 519562,
+        "sha256": "518332950145dcc1b5c16664aaab96b6aa28cb73f44560fcc41b63584779f242",
+        "source_provenance": {
+          "origin": "cloudflare_workers_ai",
+          "model": "@cf/black-forest-labs/flux-1-schnell",
+          "created_at": "2026-10-30T03:53:32+00:00",
+          "request_settings": {
+            "prompt": "Premium editorial photograph of unwrapped, unbranded chocolate. Product: Hazelnut truffles. Description: Glossy domed chocolate truffles with fine piped chocolate ribbons, a creamy hazelnut ganache center and chopped roasted hazelnuts. One cut truffle faces the camera; a few whole domed truffles surround it. Audience: Working adults seeking an afternoon treat. Market: United States. Art direction: Luxury close-up food photography, low camera angle. Large glossy chocolate pieces fill the lower two-thirds, one opened piece showing the filling, supporting pieces softly out of focus at the edges. Pale limestone, warm ivory wall, muted rose linen, rich warm cocoa, golden window light. No plants or distant tabletop still life. Square, edge-to-edge photograph. The upper 35 percent is a quiet, pale ivory wall with empty space, brightest at the upper left. The chocolate fills the lower 65 percent: a large, sharply focused opened hero near the lower center, with a few intact pieces and soft foreground depth. Warm afternoon window light, realistic appetizing texture. Keep the main hero fully visible. No borders, graphic panels, packaging, text, letters, logos, labels, stamps, or engravings.",
+            "steps": 4
+          }
+        }
+      }
+    }
+  ]
+}
