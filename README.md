@@ -6,21 +6,18 @@ A local PHP app that turns a two-product brief into six campaign PNGs. Supply ph
 
 ## Quick start
 
-On **macOS**, paste this entire block into Terminal. The start script uses an existing PHP installation or installs PHP through [Homebrew](https://brew.sh/) when it is missing. If Homebrew is missing too, it runs the official installer first. Follow its prompts; it may request your Mac password. The first installation can take several minutes, especially on older Intel Macs.
+On **macOS**, paste this entire block into Terminal:
 
 ```sh
+cd "$HOME" &&
 git clone https://github.com/castomize/adobe-automation-for-social-campaigns.git &&
 cd adobe-automation-for-social-campaigns &&
 sh bin/start.sh
 ```
 
-Already have this folder? Open Terminal in that folder and update it instead of cloning another copy:
+This downloads the project, checks for PHP, installs it through [Homebrew](https://brew.sh/) if missing, validates the required extensions, and starts the app. If Homebrew is missing too, the start script runs its official installer first. Follow the installer prompts; they may request your Mac password. Initial installation can take several minutes, especially on older Intel Macs.
 
-```sh
-git pull --ff-only && sh bin/start.sh
-```
-
-Alternatively, use **Code → Download ZIP**, extract it, and run `sh bin/start.sh` from the extracted folder. If macOS prompts to install Command Line Tools when running `git`, complete that installation and rerun the clone block, or use Download ZIP.
+If macOS prompts to install Command Line Tools when running `git`, complete that installation and rerun the block.
 
 Open [localhost:8787](http://127.0.0.1:8787/) and select **Load example**. This renders all six PNGs using the included photographs, without credentials or API calls. Stop the server with Ctrl+C. If the port is occupied, run `STUDIO_PORT=8788 sh bin/start.sh` and open port 8788 instead.
 
