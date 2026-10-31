@@ -128,7 +128,82 @@ def multipart(data, uploads):
     return bytes(body), 'multipart/form-data; boundary=' + boundary
 
 
+def startup_checks():
+    # Package-manager fixtures exercise setup without changing the test machine.
+    cases = [
+        ('existing PHP needs no installer', {'PHP_AVAILABLE': '1'}, 0, ['check', 'server'], 'Load example'),
+        ('missing PHP installs and starts', {}, 0, ['install-php', 'check', 'server'], 'Installing PHP'),
+        ('installed Homebrew PHP is reused outside PATH', {'PHP_INSTALLED': '1', 'BREW_LOCATION': 'fallback'}, 0, ['check', 'server'], 'Load example'),
+        ('missing Homebrew installs first on Intel', {'BREW_LOCATION': 'missing'}, 0, ['install-brew', 'install-php', 'check', 'server'], 'official Homebrew installer'),
+        ('missing Homebrew installs first on Apple Silicon', {'BREW_LOCATION': 'missing', 'MACHINE': 'arm64'}, 0, ['install-brew', 'install-php', 'check', 'server'], 'Load example'),
+        ('Homebrew download failure stops startup', {'BREW_LOCATION': 'missing', 'DOWNLOAD_FAIL': '1'}, 1, [], 'Could not download Homebrew'),
+        ('Homebrew installer failure stops startup', {'BREW_LOCATION': 'missing', 'BREW_SETUP_FAIL': '1'}, 1, ['install-brew'], 'Homebrew setup did not complete'),
+        ('PHP install failure stops startup', {'PHP_INSTALL_FAIL': '1'}, 1, ['install-php'], 'PHP installation did not complete'),
+        ('old PHP reports the required version', {'PHP_AVAILABLE': '1', 'VERSION_FAIL': '1'}, 1, [], 'PHP 8.2 or later'),
+        ('missing extensions prevent serving', {'PHP_AVAILABLE': '1', 'CHECK_FAIL': '1'}, 1, ['check'], 'Startup checks failed'),
+        ('Linux without PHP gets setup instructions', {'SYSTEM': 'Linux'}, 1, [], 'Linux/WSL commands'),
+        ('invalid port is rejected before installing', {'STUDIO_PORT': 'invalid'}, 2, [], 'STUDIO_PORT must be'),
+    ]
+    for description, options, code, events, message in cases:
+        with tempfile.TemporaryDirectory(prefix='melt-muse-startup-') as temporary:
+            root = Path(temporary)
+            tools_dir = root / 'tools'
+            tools_dir.mkdir()
+
+            def script(path, body):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('#!/bin/sh\nset -eu\n' + body + '\n')
+                path.chmod(0o700)
+
+            (tools_dir / 'dirname').symlink_to(shutil.which('dirname'))
+            script(tools_dir / 'uname', 'if [ "$1" = -s ]; then echo "${SYSTEM:-Darwin}"; else echo "${MACHINE:-x86_64}"; fi')
+            script(root / 'php-fixture', '''case "$1" in
+  -r) exit "${VERSION_FAIL:-0}" ;;
+  bin/studio.php) echo check >> "$TEST_ROOT/events"; exit "${CHECK_FAIL:-0}" ;;
+  *) echo server >> "$TEST_ROOT/events" ;;
+esac''')
+            script(root / 'brew-fixture', '''if [ "$1" = --prefix ]; then
+  echo "$TEST_ROOT/php"
+else
+  [ "$*" = 'install php' ]
+  echo install-php >> "$TEST_ROOT/events"
+  [ "${PHP_INSTALL_FAIL:-0}" = 0 ]
+  /bin/mkdir -p "$TEST_ROOT/php/bin"
+  /bin/cp "$TEST_ROOT/php-fixture" "$TEST_ROOT/php/bin/php"
+fi''')
+            script(root / 'installer', '''echo install-brew >> "$TEST_ROOT/events"
+[ "${BREW_SETUP_FAIL:-0}" = 0 ]
+/bin/mkdir -p "${TEST_BREW%/*}"
+/bin/cp "$TEST_ROOT/brew-fixture" "$TEST_BREW"''')
+            script(tools_dir / 'curl', '''[ "$*" = '-fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh' ]
+[ "${DOWNLOAD_FAIL:-0}" = 0 ]
+/bin/cat "$TEST_ROOT/installer"''')
+            brew_path = root / ('arm' if options.get('MACHINE') == 'arm64' else 'intel') / 'bin/brew'
+            location = options.get('BREW_LOCATION', 'path')
+            if location != 'missing':
+                target = brew_path if location == 'fallback' else tools_dir / 'brew'
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.symlink_to(root / 'brew-fixture')
+            if options.get('PHP_AVAILABLE'):
+                (tools_dir / 'php').symlink_to(root / 'php-fixture')
+            if options.get('PHP_INSTALLED'):
+                (root / 'php/bin').mkdir(parents=True)
+                (root / 'php/bin/php').symlink_to(root / 'php-fixture')
+
+            # Redirect only fixed Homebrew locations; all setup logic stays intact.
+            source = (ROOT / 'bin/start.sh').read_text()
+            source = source.replace('/opt/homebrew', str(root / 'arm')).replace('/usr/local', str(root / 'intel'))
+            (root / 'app/bin').mkdir(parents=True)
+            (root / 'app/bin/start.sh').write_text(source)
+            result = subprocess.run(['/bin/sh', str(root / 'app/bin/start.sh')], capture_output=True, text=True,
+                                    env={'PATH': str(tools_dir), 'TEST_ROOT': str(root), 'TEST_BREW': str(brew_path), **options}, timeout=10)
+            actual_events = (root / 'events').read_text().splitlines() if (root / 'events').exists() else []
+            check(result.returncode == code and actual_events == events and message in result.stdout + result.stderr,
+                  'startup: ' + description)
+
+
 def main():
+    startup_checks()
     with tempfile.TemporaryDirectory(prefix='melt-muse-tests-') as temporary, ExitStack() as cleanup:
         sandbox = Path(temporary) / 'app'
         shutil.copytree(ROOT, sandbox, ignore=shutil.ignore_patterns('storage', '.git', '.env', '*.log', '__pycache__'))

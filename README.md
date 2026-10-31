@@ -6,29 +6,34 @@ A local PHP app that turns a two-product brief into six campaign PNGs. Supply ph
 
 ## Quick start
 
-Requires PHP 8.2+ with cURL, fileinfo, GD, FreeType and ZIP. Use macOS, Linux or Windows with WSL. Fonts are bundled; there are no Composer or npm dependencies. Python 3 is needed only for tests.
-
-On a Mac without PHP, install it once using [Homebrew](https://brew.sh/):
+On **macOS**, paste this entire block into Terminal. The start script uses an existing PHP installation or installs PHP through [Homebrew](https://brew.sh/) when it is missing. If Homebrew is missing too, it runs the official installer first. Follow its prompts; it may request your Mac password. The first installation can take several minutes, especially on older Intel Macs.
 
 ```sh
-brew install php
-```
-
-If `brew` is not found, install Homebrew from the official link above and complete the installer's **Next steps** to add it to your terminal PATH. Cloning this repository downloads the app; it does not install PHP.
-
-```sh
-git clone https://github.com/castomize/adobe-automation-for-social-campaigns.git
-cd adobe-automation-for-social-campaigns
+git clone https://github.com/castomize/adobe-automation-for-social-campaigns.git &&
+cd adobe-automation-for-social-campaigns &&
 sh bin/start.sh
 ```
 
-Alternatively, use **Code → Download ZIP**, extract it, and run `sh bin/start.sh` from the extracted folder. The start command checks PHP and its extensions before starting the server. It creates private storage automatically; no database or build step is needed.
+Already have this folder? Open Terminal in that folder and update it instead of cloning another copy:
+
+```sh
+git pull --ff-only && sh bin/start.sh
+```
+
+Alternatively, use **Code → Download ZIP**, extract it, and run `sh bin/start.sh` from the extracted folder. If macOS prompts to install Command Line Tools when running `git`, complete that installation and rerun the clone block, or use Download ZIP.
 
 Open [localhost:8787](http://127.0.0.1:8787/) and select **Load example**. This renders all six PNGs using the included photographs, without credentials or API calls. Stop the server with Ctrl+C. If the port is occupied, run `STUDIO_PORT=8788 sh bin/start.sh` and open port 8788 instead.
 
-The start script also finds PHP in the standard Homebrew locations if your terminal PATH does not include it. If startup reports a missing extension, install or enable it for the PHP CLI and rerun the start command. The local workflow has been verified on macOS; Linux and WSL have not been independently verified.
+The app requires PHP 8.2+ with cURL, fileinfo, GD, FreeType and ZIP. Startup checks these before serving the app and finds Homebrew PHP even when it is absent from PATH. An existing outdated or incomplete PHP installation reports what needs fixing. Fonts are bundled; no Composer, npm, database or build step is needed. Private storage is created automatically. Python 3 is only needed for tests.
 
-Already cloned the repository? Run `git pull --ff-only` from its folder to get the latest startup fixes, then run `sh bin/start.sh` again.
+On **Ubuntu 24.04 or Debian 12+**, including WSL, install prerequisites before using the clone block:
+
+```sh
+sudo apt-get update &&
+sudo apt-get install -y git php-cli php-curl php-gd php-zip
+```
+
+For other Linux distributions, install equivalent PHP packages using your package manager. Automatic installation is macOS-only. The local workflow has been verified on macOS; Linux and WSL have not been independently verified.
 
 ## Reviewer walkthrough
 
@@ -95,7 +100,7 @@ Runs live in `storage/runs/<run-id>/`: `brief.json`, `manifest.json`, `sources/`
 python3 tests/run.py
 ```
 
-Tests use a temporary project and local provider fixture, never Cloudflare. They cover validation, uploads, concurrency, failures, exact example reproduction, text fitting, history, crop revisions, ZIP integrity and private routes. `--keep-artifacts` retains test renders.
+Tests use a temporary project, setup command fixtures and a local provider fixture; they never install packages or call Cloudflare. They cover startup, validation, uploads, concurrency, failures, exact example reproduction, text fitting, history, crop revisions, ZIP integrity and private routes. `--keep-artifacts` retains test renders.
 
 Uploads accept decoded JPEG, PNG or WebP up to 5 MiB, 256–4096 pixels per side and 8 million pixels. Secrets and runtime files stay outside the public directory. History uses a private HttpOnly cookie; writes require CSRF validation. Clearing cookies or changing browsers loses UI access, but leaves saved files intact. Older runs require their original session.
 
