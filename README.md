@@ -15,13 +15,13 @@ cd adobe-automation-for-social-campaigns &&
 sh bin/start.sh
 ```
 
-This downloads the project, checks for PHP, installs it through [Homebrew](https://brew.sh/) if missing, validates the required extensions, and starts the app. If Homebrew is missing too, the start script runs its official installer first. Follow the installer prompts; they may request your Mac password. Initial installation can take several minutes, especially on older Intel Macs.
+This downloads the project, checks for PHP, installs missing prerequisites, validates the required extensions, and starts the app. Apple Silicon Macs use [Homebrew](https://brew.sh/). Intel Macs without Homebrew use [MacPorts](https://www.macports.org/install.php), because Homebrew's current installer rejects Intel processors. Follow the installer prompts; they may request your Mac password. Initial installation can take several minutes.
 
 If macOS prompts to install Command Line Tools when running `git`, complete that installation and rerun the block.
 
 Open [localhost:8787](http://127.0.0.1:8787/) and select **Load example**. This renders all six PNGs using the included photographs, without credentials or API calls. Stop the server with Ctrl+C. If the port is occupied, run `STUDIO_PORT=8788 sh bin/start.sh` and open port 8788 instead.
 
-The app requires PHP 8.2+ with cURL, fileinfo, GD, FreeType and ZIP. Startup checks these before serving the app and finds Homebrew PHP even when it is absent from PATH. An existing outdated or incomplete PHP installation reports what needs fixing. Fonts are bundled; no Composer, npm, database or build step is needed. Private storage is created automatically. Python 3 is only needed for tests.
+The app requires PHP 8.2+ with cURL, fileinfo, GD, FreeType and ZIP. Startup finds Homebrew or MacPorts PHP even when absent from PATH. MacPorts setup uses a versioned installer with checksum and signature checks, then installs PHP 8.4 and its extensions; automatic setup covers Intel macOS 11–15 and 26. Existing outdated or incomplete PHP installations report what needs fixing. Fonts are bundled; no Composer, npm, database or build step is needed. Private storage is created automatically. Python 3 is only needed for tests.
 
 On **Ubuntu 24.04 or Debian 12+**, including WSL, install prerequisites before using the clone block:
 

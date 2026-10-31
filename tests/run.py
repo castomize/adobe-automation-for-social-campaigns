@@ -134,10 +134,18 @@ def startup_checks():
         ('existing PHP needs no installer', {'PHP_AVAILABLE': '1'}, 0, ['check', 'server'], 'Load example'),
         ('missing PHP installs and starts', {}, 0, ['install-php', 'check', 'server'], 'Installing PHP'),
         ('installed Homebrew PHP is reused outside PATH', {'PHP_INSTALLED': '1', 'BREW_LOCATION': 'fallback'}, 0, ['check', 'server'], 'Load example'),
-        ('missing Homebrew installs first on Intel', {'BREW_LOCATION': 'missing'}, 0, ['install-brew', 'install-php', 'check', 'server'], 'official Homebrew installer'),
+        ('Intel Sequoia installs MacPorts before PHP', {'BREW_LOCATION': 'missing'}, 0, ['checksum', 'signature', 'install-ports', 'install-php', 'select-php', 'check', 'server'], 'Installing MacPorts'),
+        ('existing MacPorts installs PHP without another installer', {'BREW_LOCATION': 'missing', 'PORT_AVAILABLE': '1'}, 0, ['install-php', 'select-php', 'check', 'server'], 'with MacPorts'),
+        ('MacPorts PHP is reused outside PATH', {'BREW_LOCATION': 'missing', 'PORT_PHP_AVAILABLE': '1'}, 0, ['check', 'server'], 'Load example'),
+        ('MacPorts download failure stops before installation', {'BREW_LOCATION': 'missing', 'DOWNLOAD_FAIL': '1'}, 1, [], 'Could not download MacPorts'),
+        ('MacPorts checksum failure stops before installation', {'BREW_LOCATION': 'missing', 'CHECKSUM_FAIL': '1'}, 1, ['checksum'], 'checksum verification failed'),
+        ('MacPorts signature failure stops before installation', {'BREW_LOCATION': 'missing', 'SIGNATURE_FAIL': '1'}, 1, ['checksum', 'signature'], 'signature verification failed'),
+        ('MacPorts installer failure stops before PHP', {'BREW_LOCATION': 'missing', 'PORT_SETUP_FAIL': '1'}, 1, ['checksum', 'signature', 'install-ports'], 'MacPorts setup did not complete'),
+        ('MacPorts PHP failure prevents serving', {'BREW_LOCATION': 'missing', 'PORT_AVAILABLE': '1', 'PHP_INSTALL_FAIL': '1'}, 1, ['install-php'], 'PHP installation did not complete'),
+        ('unsupported Intel macOS gets a clear error', {'BREW_LOCATION': 'missing', 'MACOS_VERSION': '10.14.6'}, 1, [], 'Automatic MacPorts setup is unavailable'),
         ('missing Homebrew installs first on Apple Silicon', {'BREW_LOCATION': 'missing', 'MACHINE': 'arm64'}, 0, ['install-brew', 'install-php', 'check', 'server'], 'Load example'),
-        ('Homebrew download failure stops startup', {'BREW_LOCATION': 'missing', 'DOWNLOAD_FAIL': '1'}, 1, [], 'Could not download Homebrew'),
-        ('Homebrew installer failure stops startup', {'BREW_LOCATION': 'missing', 'BREW_SETUP_FAIL': '1'}, 1, ['install-brew'], 'Homebrew setup did not complete'),
+        ('Homebrew download failure stops startup', {'BREW_LOCATION': 'missing', 'MACHINE': 'arm64', 'DOWNLOAD_FAIL': '1'}, 1, [], 'Could not download Homebrew'),
+        ('Homebrew installer failure stops startup', {'BREW_LOCATION': 'missing', 'MACHINE': 'arm64', 'BREW_SETUP_FAIL': '1'}, 1, ['install-brew'], 'Homebrew setup did not complete'),
         ('PHP install failure stops startup', {'PHP_INSTALL_FAIL': '1'}, 1, ['install-php'], 'PHP installation did not complete'),
         ('old PHP reports the required version', {'PHP_AVAILABLE': '1', 'VERSION_FAIL': '1'}, 1, [], 'PHP 8.2 or later'),
         ('missing extensions prevent serving', {'PHP_AVAILABLE': '1', 'CHECK_FAIL': '1'}, 1, ['check'], 'Startup checks failed'),
@@ -156,7 +164,10 @@ def startup_checks():
                 path.chmod(0o700)
 
             (tools_dir / 'dirname').symlink_to(shutil.which('dirname'))
+            (tools_dir / 'rm').symlink_to(shutil.which('rm'))
+            script(tools_dir / 'mktemp', shutil.which('mktemp') + ' -d "$TEST_ROOT/download.XXXXXX"')
             script(tools_dir / 'uname', 'if [ "$1" = -s ]; then echo "${SYSTEM:-Darwin}"; else echo "${MACHINE:-x86_64}"; fi')
+            script(tools_dir / 'sw_vers', 'echo "${MACOS_VERSION:-15.6}"')
             script(root / 'php-fixture', '''case "$1" in
   -r) exit "${VERSION_FAIL:-0}" ;;
   bin/studio.php) echo check >> "$TEST_ROOT/events"; exit "${CHECK_FAIL:-0}" ;;
@@ -172,12 +183,48 @@ else
   /bin/cp "$TEST_ROOT/php-fixture" "$TEST_ROOT/php/bin/php"
 fi''')
             script(root / 'installer', '''echo install-brew >> "$TEST_ROOT/events"
+[ "${MACHINE:-x86_64}" = arm64 ]
 [ "${BREW_SETUP_FAIL:-0}" = 0 ]
 /bin/mkdir -p "${TEST_BREW%/*}"
 /bin/cp "$TEST_ROOT/brew-fixture" "$TEST_BREW"''')
-            script(tools_dir / 'curl', '''[ "$*" = '-fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh' ]
-[ "${DOWNLOAD_FAIL:-0}" = 0 ]
-/bin/cat "$TEST_ROOT/installer"''')
+            script(tools_dir / 'curl', '''[ "${DOWNLOAD_FAIL:-0}" = 0 ]
+if [ "$1" = -fsSL ]; then
+  [ "$*" = '-fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh' ]
+  /bin/cat "$TEST_ROOT/installer"
+else
+  [ "$7" = 'https://github.com/macports/macports-base/releases/download/v2.12.7/MacPorts-2.12.7-15-Sequoia.pkg' ]
+  echo package-fixture > "$6"
+fi''')
+            script(tools_dir / 'shasum', '''echo checksum >> "$TEST_ROOT/events"
+[ "$*" = '-a 256 -c -' ]
+read -r digest package
+[ "$digest" = 87b2e87ed7adc4aca947b42eb7ff991614cc0edfccb486237f2bbc75f28aae63 ]
+[ -f "$package" ]
+exit "${CHECKSUM_FAIL:-0}"''')
+            script(tools_dir / 'pkgutil', '''echo signature >> "$TEST_ROOT/events"
+[ "$1" = --check-signature ]
+exit "${SIGNATURE_FAIL:-0}"''')
+            script(tools_dir / 'sudo', 'exec "$@"')
+            script(tools_dir / 'installer', '''echo install-ports >> "$TEST_ROOT/events"
+[ "$1" = -pkg ] && [ -f "$2" ] && [ "$3" = -target ] && [ "$4" = / ]
+[ "${PORT_SETUP_FAIL:-0}" = 0 ]
+/bin/mkdir -p "$TEST_ROOT/ports/bin"
+/bin/cp "$TEST_ROOT/port-fixture" "$TEST_ROOT/ports/bin/port"''')
+            script(root / 'port-fixture', '''if [ "$1" = install ]; then
+  [ "$*" = 'install php84 php84-curl php84-gd php84-zip' ]
+  echo install-php >> "$TEST_ROOT/events"
+  [ "${PHP_INSTALL_FAIL:-0}" = 0 ]
+  /bin/cp "$TEST_ROOT/php-fixture" "$TEST_ROOT/ports/bin/php84"
+else
+  [ "$*" = 'select --set php php84' ]
+  echo select-php >> "$TEST_ROOT/events"
+  /bin/ln -s "$TEST_ROOT/ports/bin/php84" "$TEST_ROOT/ports/bin/php"
+fi''')
+            (root / 'ports/bin').mkdir(parents=True)
+            if options.get('PORT_AVAILABLE'):
+                (root / 'ports/bin/port').symlink_to(root / 'port-fixture')
+            if options.get('PORT_PHP_AVAILABLE'):
+                (root / 'ports/bin/php').symlink_to(root / 'php-fixture')
             brew_path = root / ('arm' if options.get('MACHINE') == 'arm64' else 'intel') / 'bin/brew'
             location = options.get('BREW_LOCATION', 'path')
             if location != 'missing':
@@ -190,15 +237,18 @@ fi''')
                 (root / 'php/bin').mkdir(parents=True)
                 (root / 'php/bin/php').symlink_to(root / 'php-fixture')
 
-            # Redirect only fixed Homebrew locations; all setup logic stays intact.
+            # Isolate fixed installation paths and privileged system commands.
             source = (ROOT / 'bin/start.sh').read_text()
             source = source.replace('/opt/homebrew', str(root / 'arm')).replace('/usr/local', str(root / 'intel'))
+            source = source.replace('/opt/local', str(root / 'ports'))
+            source = source.replace('/usr/sbin/pkgutil', str(tools_dir / 'pkgutil')).replace('/usr/sbin/installer', str(tools_dir / 'installer'))
             (root / 'app/bin').mkdir(parents=True)
             (root / 'app/bin/start.sh').write_text(source)
             result = subprocess.run(['/bin/sh', str(root / 'app/bin/start.sh')], capture_output=True, text=True,
                                     env={'PATH': str(tools_dir), 'TEST_ROOT': str(root), 'TEST_BREW': str(brew_path), **options}, timeout=10)
             actual_events = (root / 'events').read_text().splitlines() if (root / 'events').exists() else []
-            check(result.returncode == code and actual_events == events and message in result.stdout + result.stderr,
+            check(result.returncode == code and actual_events == events and message in result.stdout + result.stderr
+                  and not list(root.glob('download.*')),
                   'startup: ' + description)
 
 
