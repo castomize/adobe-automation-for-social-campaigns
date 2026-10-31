@@ -21,6 +21,8 @@ If macOS prompts to install Command Line Tools when running `git`, complete that
 
 Open [localhost:8787](http://127.0.0.1:8787/) and select **Load example**. This renders all six PNGs using the included photographs, without credentials or API calls. Stop the server with Ctrl+C. If the port is occupied, run `STUDIO_PORT=8788 sh bin/start.sh` and open port 8788 instead.
 
+For live generation, add the privately shared `.env` as described below in [Live image generation](#live-image-generation). You can copy it while the app is running; no restart is needed.
+
 The app requires PHP 8.2+ with cURL, fileinfo, GD, FreeType and ZIP. Startup finds Homebrew or MacPorts PHP even when absent from PATH. MacPorts setup uses a versioned installer with checksum and signature checks, then installs PHP 8.4 and its extensions; automatic setup covers Intel macOS 11–15 and 26. Existing outdated or incomplete PHP installations report what needs fixing. Fonts are bundled; no Composer, npm, database or build step is needed. Private storage is created automatically. Python 3 is only needed for tests.
 
 On **Ubuntu 24.04 or Debian 12+**, including WSL, install prerequisites before using the clone block:
@@ -42,16 +44,18 @@ For other Linux distributions, install equivalent PHP packages using your packag
 
 Request counts, source records and compliance results are recorded in `storage/runs/<run-id>/manifest.json`. The ZIP contains only images.
 
-## Live image generation (optional setup)
+## Live image generation
 
-To generate a missing photograph, configure your own Cloudflare Workers AI credentials. Create a private `.env` in the project root:
+For assessment review, use the `.env` file shared privately with the submission. Copy it into the project root, alongside `README.md`, and keep its name exactly `.env`. The file contains `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`; it is intentionally excluded from the public repository.
+
+Leave the server running. The app reads `.env` on each request, so the next **Generate campaign** action uses the added credentials without a restart. An earlier “credentials missing” message in Terminal is only the startup check and does not update automatically. Keep credential values out of screenshots, recordings and Git. Environment variables take precedence over `.env`.
+
+If you prefer your own Cloudflare account, create `.env` from the template and set the two values using Cloudflare's [Workers AI token instructions](https://developers.cloudflare.com/workers-ai/get-started/rest-api/). In a second Terminal window, from the project folder:
 
 ```sh
 test -e .env || cp .env.example .env
 chmod 600 .env
 ```
-
-Set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` using Cloudflare's [Workers AI token instructions](https://developers.cloudflare.com/workers-ai/get-started/rest-api/). Keep `.env` out of version control. Environment variables take precedence.
 
 Use the Workers Free plan. The app cannot check billing or remaining quota. After checking the plan in Cloudflare, this optional command requests one real image and saves it in `storage/smoke/`:
 
